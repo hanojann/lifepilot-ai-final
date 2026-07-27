@@ -1,0 +1,6 @@
+{
+  "name": "LifePilot AI",
+  "description": "AI-powered student productivity workspace with study planning, smart notes, quiz generator, GPA calculator, and daily health/life trackers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
