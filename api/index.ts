@@ -78,4 +78,4 @@ app.post("/api/ai/quiz", async (req, res) => {
   res.json(getQuizFallback(req.body?.subject, req.body?.topic, req.body?.difficulty));
 });
 
-export default app;
+export default app;const apiKey = process.env.GEMINI_API_KEY || "AIzaSy...AapkiKeyYahan";
