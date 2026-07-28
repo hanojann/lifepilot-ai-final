@@ -11,6 +11,9 @@
     "@google/genai": "*",
     "dotenv": "*",
     "express": "*",
+    "lucide-react": "*",
+    "clsx": "*",
+    "tailwind-merge": "*",
     "react": "*",
     "react-dom": "*",
     "vite": "^5.2.11"
