@@ -1,15 +1,19 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
+import fs from "fs";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+// Fix 1: Dynamic PORT for hosting platforms (Render, Railway, Heroku etc.)
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "10mb" }));
+
+// Fix 2: Updated model string to standard valid model
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 // Initialize Gemini Client
 const apiKey = process.env.GEMINI_API_KEY || "";
@@ -224,7 +228,7 @@ Current user context: ${JSON.stringify(userContext || {})}`;
         const prompt = `${formattedHistory}\nCoach:`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: GEMINI_MODEL,
           contents: prompt,
           config: { systemInstruction, temperature: 0.7 },
         });
@@ -260,7 +264,7 @@ app.post("/api/ai/planner", async (req, res) => {
 Generate a structured study schedule with specific tasks. Return JSON conforming strictly to schema.`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: GEMINI_MODEL,
           contents: prompt,
           config: {
             systemInstruction: "You are an expert academic planner.",
@@ -324,7 +328,7 @@ Target Complexity Level: ${complexityLevel || "College Level"}
 Format Type: ${promptType || "Comprehensive Explanation"}`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: GEMINI_MODEL,
           contents: prompt,
           config: {
             systemInstruction: "You are a master educator who explains complex academic concepts clearly.",
@@ -364,7 +368,7 @@ ${rawNotes}
 """`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: GEMINI_MODEL,
           contents: prompt,
           config: {
             systemInstruction: "You are a study summarization assistant.",
@@ -437,7 +441,7 @@ app.post("/api/ai/quiz", async (req, res) => {
 - Questions: ${questionCount || 5}`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: GEMINI_MODEL,
           contents: prompt,
           config: {
             systemInstruction: "You are an exam maker and quiz generator for students.",
@@ -493,22 +497,7 @@ app.post("/api/ai/quiz", async (req, res) => {
 
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    // Fix 3: Dynamic Import for Vite so production builds don't fail when Vite is in devDependencies
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`LifePilot AI server running on http://0.0.0.0:${PORT}`);
-  });
-}
-
-startServer();
+      server: { middlewareMode: tr
