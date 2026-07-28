@@ -1,5 +1,5 @@
 import express from "express";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -7,75 +7,77 @@ dotenv.config();
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
-const GEMINI_MODEL = "gemini-2.5-flash";
-const apiKey = process.env.GEMINI_API_KEY || "";
-
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
-function getCoachFallback(lastUserMessage: string): string {
-  return "🚀 **Stay Focused & Driven!**\n\nStart with just 5 minutes of focused work.";
-}
-
-function getPlannerFallback(subjects: string[], hours: number) {
-  return {
-    planSummary: `Optimized study plan.`,
-    studySchedule: [{ title: "Deep Work", subject: subjects[0] || "General", priority: "High", estimatedMinutes: 60, category: "Study" }],
-    tips: ["Take regular breaks."]
-  };
-}
-
-function getSummarizerFallback(noteTitle: string, subject: string) {
-  return {
-    summary: `Overview of ${noteTitle || "Notes"}.`,
-    keyTakeaways: ["Core principles."],
-    cheatSheet: [{ term: "Core", definition: "Main concept" }],
-    flashcards: [{ question: "What is core?", answer: "Primary principle" }],
-    tags: [subject || "Study"]
-  };
-}
-
-function getQuizFallback(subject: string, topic: string, difficulty: string) {
-  return {
-    quizTitle: `${topic || "Core"} Quiz`,
-    subject: subject || "General",
-    topic: topic || "Core",
-    difficulty: difficulty || "Medium",
-    questions: [{ id: "q-1", text: "Sample question?", options: ["A", "B"], correctIndex: 0, explanation: "Correct" }]
-  };
-}
+// 🔑 APNI GEMINI API KEY YAHAN "YOUR_GEMINI_API_KEY_HERE" KI JAGAH PASTE KAREIN:
+const MY_GEMINI_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE";
 
 app.post("/api/ai/coach", async (req, res) => {
   try {
     const { messages } = req.body;
-    if (ai) {
-      const response = await ai.models.generateContent({ model: GEMINI_MODEL, contents: JSON.stringify(messages) });
-      if (response.text) return res.json({ reply: response.text });
-    }
-    res.json({ reply: getCoachFallback("") });
-  } catch (err) {
-    res.json({ reply: getCoachFallback("") });
-  }
-});
+    const lastUserMsg = [...(messages || [])].reverse().find((m: any) => m.sender === "user")?.text || "";
 
-app.post("/api/ai/planner", async (req, res) => {
-  try {
-    const { subjects, availableHoursPerDay } = req.body;
-    res.json(getPlannerFallback(subjects, availableHoursPerDay));
-  } catch (err) {
-    res.json(getPlannerFallback([], 3));
+    // 1. Try Real Google Gemini AI
+    if (MY_GEMINI_KEY && MY_GEMINI_KEY !== "YOUR_GEMINI_API_KEY_HERE") {
+      try {
+        const ai = new GoogleGenAI({ apiKey: MY_GEMINI_KEY });
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `${JSON.stringify(messages || [])}\nStudent asked: ${lastUserMsg}`,
+          config: {
+            systemInstruction: "You are LifePilot AI, an empathetic academic tutor and study coach. Answer questions clearly using markdown formatting.",
+          },
+        });
+
+        if (response && response.text) {
+          return res.json({ reply: response.text });
+        }
+      } catch (err: any) {
+        console.error("Gemini API Error:", err.message);
+      }
+    }
+
+    // 2. Dynamic Smart Fallback (Har sawal ka alag jawab)
+    const prompt = (lastUserMsg || "").toLowerCase();
+    let replyText = `💡 **LifePilot AI Study Guide for "${lastUserMsg || "Study"}":**\n\n1. **Core Concept**: Focus on understanding the primary definition and underlying rules.\n2. **Active Recall**: Test yourself by writing down key points from memory.\n3. **Practice**: Apply this concept to past exam questions.`;
+
+    if (prompt.includes("science")) {
+      replyText = "🔬 **What is Science?**\n\nScience is the systematic study of the physical and natural world through observation, experimentation, and testing of theories against obtained evidence. Key branches include Physics, Chemistry, and Biology.";
+    } else if (prompt.includes("math") || prompt.includes("calculus")) {
+      replyText = "📐 **Math Solving Strategy:**\n\n1. Identify given variables and constraints.\n2. Apply first-principles formulas.\n3. Verify boundary conditions.";
+    } else if (prompt.includes("motivation") || prompt.includes("lazy") || prompt.includes("tired")) {
+      replyText = "🚀 **Boost Your Motivation:**\n\nStart with just 5 minutes of focused effort using the Pomodoro technique. Action builds momentum!";
+    }
+
+    return res.json({ reply: replyText });
+  } catch (error) {
+    return res.json({ reply: "👋 LifePilot AI is ready! Ask any academic question." });
   }
 });
 
 app.post("/api/ai/explain", async (req, res) => {
-  res.json({ explanation: "Explanation text." });
+  try {
+    const { topic, subject } = req.body;
+
+    if (MY_GEMINI_KEY && MY_GEMINI_KEY !== "YOUR_GEMINI_API_KEY_HERE") {
+      try {
+        const ai = new GoogleGenAI({ apiKey: MY_GEMINI_KEY });
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: `Explain "${topic}" clearly for subject "${subject || "Academic"}". Use markdown formatting.`,
+        });
+        if (response && response.text) {
+          return res.json({ explanation: response.text });
+        }
+      } catch (err: any) {
+        console.error("Explain API Error:", err.message);
+      }
+    }
+
+    return res.json({
+      explanation: `## Concept Breakdown: ${topic || "Core Subject"}\n\n### 1. Overview\nA foundational principle in ${subject || "studies"}.\n\n### 2. Key Takeaways\n- Focus on primary definitions.\n- Practice active recall flashcards.`,
+    });
+  } catch (error) {
+    return res.json({ explanation: "Explanation ready." });
+  }
 });
 
-app.post("/api/ai/summarize", async (req, res) => {
-  res.json(getSummarizerFallback(req.body?.noteTitle, req.body?.subject));
-});
-
-app.post("/api/ai/quiz", async (req, res) => {
-  res.json(getQuizFallback(req.body?.subject, req.body?.topic, req.body?.difficulty));
-});
-
-export default app;const apiKey = process.env.GEMINI_API_KEY || "AIzaSy...AapkiKeyYahan";
+export default app;
