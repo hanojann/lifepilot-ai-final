@@ -7,77 +7,37 @@ dotenv.config();
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
-// 🔑 APNI GEMINI API KEY YAHAN "YOUR_GEMINI_API_KEY_HERE" KI JAGAH PASTE KAREIN:
-const MY_GEMINI_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE";
+// 🔑 APNI GEMINI API KEY YAHAN "AIzaSy_PASTE_YOUR_KEY_HERE" KI JAGAH PASTE KAREIN:
+const MY_GEMINI_KEY = process.env.GEMINI_API_KEY || "AIzaSy_PASTE_YOUR_KEY_HERE";
 
-app.post("/api/ai/coach", async (req, res) => {
-  try {
-    const { messages } = req.body;
-    const lastUserMsg = [...(messages || [])].reverse().find((m: any) => m.sender === "user")?.text || "";
+// Strict System Rules for Gemini AI
+const SYSTEM_INSTRUCTION = `You are LifePilot AI, a specialized academic tutor and study assistant.
+CRITICAL RULES:
+1. Answer ONLY study, academic, exam, course, and educational questions (Math, Physics, Chemistry, Biology, Computer Science, History, Literature, Languages, Study Skills, etc.).
+2. Do NOT give repetitive boilerplate greetings or generic template responses. Answer the EXACT question asked with specific facts, formulas, definitions, and step-by-step explanations.
+3. Use clean markdown formatting (bold headers, bullet points, clear steps).
+4. Keep all responses strictly focused on helping the student master their coursework and pass exams.`;
 
-    // 1. Try Real Google Gemini AI
-    if (MY_GEMINI_KEY && MY_GEMINI_KEY !== "YOUR_GEMINI_API_KEY_HERE") {
-      try {
-        const ai = new GoogleGenAI({ apiKey: MY_GEMINI_KEY });
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: `${JSON.stringify(messages || [])}\nStudent asked: ${lastUserMsg}`,
-          config: {
-            systemInstruction: "You are LifePilot AI, an empathetic academic tutor and study coach. Answer questions clearly using markdown formatting.",
-          },
-        });
+// Dynamic Academic Fallback Engine
+function getAcademicResponse(question: string): string {
+  const q = (question || "").toLowerCase().trim();
 
-        if (response && response.text) {
-          return res.json({ reply: response.text });
-        }
-      } catch (err: any) {
-        console.error("Gemini API Error:", err.message);
-      }
-    }
-
-    // 2. Dynamic Smart Fallback (Har sawal ka alag jawab)
-    const prompt = (lastUserMsg || "").toLowerCase();
-    let replyText = `💡 **LifePilot AI Study Guide for "${lastUserMsg || "Study"}":**\n\n1. **Core Concept**: Focus on understanding the primary definition and underlying rules.\n2. **Active Recall**: Test yourself by writing down key points from memory.\n3. **Practice**: Apply this concept to past exam questions.`;
-
-    if (prompt.includes("science")) {
-      replyText = "🔬 **What is Science?**\n\nScience is the systematic study of the physical and natural world through observation, experimentation, and testing of theories against obtained evidence. Key branches include Physics, Chemistry, and Biology.";
-    } else if (prompt.includes("math") || prompt.includes("calculus")) {
-      replyText = "📐 **Math Solving Strategy:**\n\n1. Identify given variables and constraints.\n2. Apply first-principles formulas.\n3. Verify boundary conditions.";
-    } else if (prompt.includes("motivation") || prompt.includes("lazy") || prompt.includes("tired")) {
-      replyText = "🚀 **Boost Your Motivation:**\n\nStart with just 5 minutes of focused effort using the Pomodoro technique. Action builds momentum!";
-    }
-
-    return res.json({ reply: replyText });
-  } catch (error) {
-    return res.json({ reply: "👋 LifePilot AI is ready! Ask any academic question." });
+  if (!q) {
+    return "📚 **LifePilot AI Study Assistant:** Ask me any study question, topic, or formula!";
   }
-});
 
-app.post("/api/ai/explain", async (req, res) => {
-  try {
-    const { topic, subject } = req.body;
-
-    if (MY_GEMINI_KEY && MY_GEMINI_KEY !== "YOUR_GEMINI_API_KEY_HERE") {
-      try {
-        const ai = new GoogleGenAI({ apiKey: MY_GEMINI_KEY });
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: `Explain "${topic}" clearly for subject "${subject || "Academic"}". Use markdown formatting.`,
-        });
-        if (response && response.text) {
-          return res.json({ explanation: response.text });
-        }
-      } catch (err: any) {
-        console.error("Explain API Error:", err.message);
-      }
-    }
-
-    return res.json({
-      explanation: `## Concept Breakdown: ${topic || "Core Subject"}\n\n### 1. Overview\nA foundational principle in ${subject || "studies"}.\n\n### 2. Key Takeaways\n- Focus on primary definitions.\n- Practice active recall flashcards.`,
-    });
-  } catch (error) {
-    return res.json({ explanation: "Explanation ready." });
+  // Physics
+  if (q.includes("physics")) {
+    return "⚡ **Physics Study Guide:**\n- **Definition**: Physics studies matter, energy, motion, and force.\n- **Core Fields**: Classical Mechanics (F=ma), Thermodynamics, Electromagnetism, Quantum Mechanics.\n- **Exam Strategy**: Memorize formulas, derive key equations, and solve numerical problem sets.";
   }
-});
-
-export default app;
+  // Chemistry
+  if (q.includes("chem")) {
+    return "🧪 **Chemistry Study Guide:**\n- **Definition**: Chemistry explores atomic structure, chemical bonding, and reactions.\n- **Core Focus**: Periodic table trends, balancing chemical equations, stoichiometry, and reaction mechanisms.\n- **Exam Strategy**: Practice formula weights and electron configurations.";
+  }
+  // Biology
+  if (q.includes("bio")) {
+    return "🧬 **Biology Study Guide:**\n- **Definition**: Biology is the study of living organisms and cellular processes.\n- **Core Focus**: Cell biology (mitosis/meiosis), DNA replication, genetics, photosynthesis, and ecosystems.\n- **Exam Strategy**: Draw labeled diagrams and memorize domain terminology.";
+  }
+  // Math / Calculus / Algebra
+  if (q.includes("math") || q.includes("calculus") || q.includes("algebra") || q.includes("equation") || q.includes("derivative") || q.includes("integral")) {
+    return "📐 **Math & Problem-Solving Breakdown:**\n1. **Identify Terms**:
