@@ -1,20 +1,33 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# 🎯 LifePilot AI - Student OS
 
-# Run and deploy your AI Studio app
+LifePilot AI is an all-in-one academic productivity suite powered by **Google Gemini AI**, **Express.js**, **Vite**, and **TypeScript**.
 
-This contains everything you need to run your app locally.
+🚀 **Live Demo:** [https://lifepilot-ai-final.vercel.app](https://lifepilot-ai-final.vercel.app)
 
-View your app in AI Studio: https://ai.studio/apps/0714ecf7-85f0-4168-859c-304165387198
+---
 
-## Run Locally
+## ✨ Key Features
 
-**Prerequisites:**  Node.js
+- 💬 **AI Study Coach:** Get instant academic guidance, motivation, and study advice.
+- 📅 **Smart Study Planner:** Generate custom daily study itineraries based on your available hours.
+- 💡 **Concept Explainer:** Break down complex topics and formulas into easy-to-understand explanations.
+- 📝 **Notes Summarizer:** Convert raw lecture notes into key takeaways and interactive flashcards.
+- 🎯 **Quiz Master:** Generate custom multiple-choice quizzes to test your knowledge.
 
+---
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🛠️ Tech Stack
+
+- **Frontend:** React, Vite, TypeScript
+- **Backend:** Express.js (Vercel Serverless Functions)
+- **AI Integration:** Google Gemini API (`@google/genai`)
+- **Hosting & Deployment:** Vercel
+
+---
+
+## 🔑 Environment Variables
+
+To run the AI features, configure your environment variable on Vercel or in `.env`:
+
+```env
+GEMINI_API_KEY=your_google_gemini_api_key_here
